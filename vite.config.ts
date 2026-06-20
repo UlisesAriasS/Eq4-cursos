@@ -33,4 +33,18 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  // ── Proxy API → Backend FastAPI ──────────────────────────────────────────
+  // VITE_API_TARGET=http://api:8000  (Docker)
+  // VITE_API_TARGET no definida      → usa localhost:8000 (local)
+  server: {
+    host: '0.0.0.0',      // necesario para escuchar desde el contenedor Docker
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

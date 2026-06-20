@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Download,
   Upload,
@@ -20,7 +20,11 @@ import {
   Building2,
   X,
   Plus,
+  Save,
+  Pencil,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 /* ─────────────────────────── Types ─────────────────────────────── */
 
@@ -74,24 +78,43 @@ const initialCerts: HistoricalCert[] = [
 /* ─────────────────────────── CV Section ────────────────────────── */
 
 function CVSummary() {
-  const degrees = [
-    { level: 'Doctorado', field: 'Ciencias Computacionales', school: 'CINVESTAV', year: '2018', icon: <GraduationCap className="w-4 h-4" /> },
-    { level: 'Maestría',  field: 'Redes y Telecomunicaciones', school: 'UNAM',    year: '2014', icon: <GraduationCap className="w-4 h-4" /> },
-    { level: 'Ingeniería', field: 'Sistemas Computacionales', school: 'IPN',      year: '2011', icon: <GraduationCap className="w-4 h-4" /> },
-  ];
+  const { docente, updateDocente } = useAuth();
 
-  const trajectory = [
-    { role: 'Profesor Titular A', org: 'Universidad Tecnológica Nacional', period: '2019 – presente', current: true },
-    { role: 'Investigador Asociado', org: 'CINVESTAV – Dpto. de Redes',    period: '2016 – 2019',      current: false },
-    { role: 'Docente de Asignatura', org: 'IPN – ESCOM',                   period: '2014 – 2016',      current: false },
-  ];
+  // Campos editables
+  const [editing, setEditing] = useState(false);
+  const [grado, setGrado]           = useState(docente?.grado_academico ?? '');
+  const [categoria, setCategoria]   = useState(docente?.categoria ?? '');
+  const [adscripcion, setAdscripcion] = useState(docente?.adscripcion ?? '');
+  const [saving, setSaving]         = useState(false);
+  const [saveMsg, setSaveMsg]       = useState<string | null>(null);
 
   const stats = [
-    { label: 'Años de experiencia', value: '12+', icon: <Star className="w-4 h-4 text-amber-500" /> },
-    { label: 'Cursos impartidos',   value: '38',  icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
-    { label: 'Certificaciones',     value: '9',   icon: <Award className="w-4 h-4 text-violet-500" /> },
-    { label: 'Diplomados',          value: '4',   icon: <Layers className="w-4 h-4 text-sky-500" /> },
+    { label: 'Número empleado', value: docente?.numero_empleado ?? '—', icon: <Star className="w-4 h-4 text-amber-500" /> },
+    { label: 'Grado académico', value: docente?.grado_academico ?? '—', icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
+    { label: 'PTC',             value: docente?.es_ptc ? 'Sí' : 'No',  icon: <Award className="w-4 h-4 text-violet-500" /> },
+    { label: 'Correo',         value: docente?.correo ?? '—',           icon: <Mail className="w-4 h-4 text-sky-500" /> },
   ];
+
+  const handleSave = async () => {
+    if (!docente) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      await api.updatePerfil(docente.usuario_id, {
+        grado_academico: grado || undefined,
+        categoria: categoria || undefined,
+        adscripcion: adscripcion || undefined,
+      });
+      updateDocente({ grado_academico: grado, categoria, adscripcion });
+      setSaveMsg('Cambios guardados');
+      setEditing(false);
+    } catch {
+      setSaveMsg('Error al guardar');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setSaveMsg(null), 3000);
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -107,27 +130,80 @@ function CVSummary() {
             </div>
             <div className="pb-1">
               <h2 className="text-gray-900" style={{ fontSize: '18px', fontWeight: 700 }}>
-                Dr. Carlos Ruiz Mendoza
+                {docente?.nombre_completo ?? 'Docente'}
               </h2>
               <p className="text-gray-500 flex items-center gap-1.5 mt-0.5" style={{ fontSize: '12px' }}>
                 <Building2 className="w-3.5 h-3.5" />
-                Profesor Titular A · Universidad Tecnológica Nacional
+                {docente?.categoria ?? 'Sin categoría'} · {docente?.adscripcion ?? 'Sin adscripción'}
               </p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] text-white rounded-xl hover:bg-[#2d5280] transition-colors shrink-0 shadow-sm" style={{ fontSize: '13px', fontWeight: 500 }}>
-            <FileArchive className="w-4 h-4" />
-            Descargar todo como ZIP
-          </button>
+          <div className="flex items-center gap-2">
+            {saveMsg && (
+              <span className={`text-xs px-3 py-1.5 rounded-xl ${
+                saveMsg.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'
+              }`}>{saveMsg}</span>
+            )}
+            <button
+              onClick={() => editing ? handleSave() : setEditing(true)}
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] text-white rounded-xl hover:bg-[#2d5280] transition-colors shrink-0 shadow-sm disabled:opacity-50"
+              style={{ fontSize: '13px', fontWeight: 500 }}
+            >
+              {editing ? (
+                <><Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar cambios'}</>
+              ) : (
+                <><Pencil className="w-4 h-4" />Editar perfil</>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Editable fields (only when editing) */}
+        {editing && (
+          <div className="grid grid-cols-3 gap-3 mb-5 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Grado académico</label>
+              <select
+                value={grado}
+                onChange={(e) => setGrado(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
+              >
+                {['Licenciatura','Especialidad','Maestría','Doctorado','Posdoctorado'].map(g =>
+                  <option key={g} value={g}>{g}</option>
+                )}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Categoría docente</label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
+              >
+                {['Profesor Titular A','Profesor Titular B','Profesor Titular C',
+                  'Profesor Asociado A','Profesor Asociado B','Profesor Asociado C',
+                  'Profesor de Asignatura'].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Adscripción</label>
+              <input
+                value={adscripcion}
+                onChange={(e) => setAdscripcion(e.target.value)}
+                placeholder="Departamento..."
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Contact chips */}
         <div className="flex flex-wrap gap-2 mb-6">
           {[
-            { icon: <Mail className="w-3.5 h-3.5" />, text: 'c.ruiz@utn.edu.mx' },
-            { icon: <Phone className="w-3.5 h-3.5" />, text: '+52 55 1234 5678' },
-            { icon: <MapPin className="w-3.5 h-3.5" />, text: 'Ciudad de México' },
-            { icon: <Calendar className="w-3.5 h-3.5" />, text: 'Ingreso: Ago 2019' },
+            { icon: <Mail className="w-3.5 h-3.5" />, text: docente?.correo ?? '—' },
+            { icon: <MapPin className="w-3.5 h-3.5" />, text: docente?.adscripcion ?? '—' },
+            { icon: <Calendar className="w-3.5 h-3.5" />, text: `Empleado: ${docente?.numero_empleado ?? '—'}` },
           ].map((c) => (
             <span key={c.text} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600" style={{ fontSize: '12px' }}>
               {c.icon}{c.text}
@@ -142,72 +218,12 @@ function CVSummary() {
               <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
                 {s.icon}
               </div>
-              <div>
-                <p className="text-gray-900" style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1 }}>{s.value}</p>
+              <div className="min-w-0">
+                <p className="text-gray-900 truncate" style={{ fontSize: '13px', fontWeight: 700, lineHeight: 1 }}>{s.value}</p>
                 <p className="text-gray-500 mt-0.5" style={{ fontSize: '10px' }}>{s.label}</p>
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Two-column: degrees + trajectory */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Formación académica */}
-          <div>
-            <p className="text-gray-400 uppercase tracking-widest mb-3" style={{ fontSize: '10px', fontWeight: 600 }}>
-              Formación Académica
-            </p>
-            <div className="space-y-2">
-              {degrees.map((d, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    i === 0 ? 'bg-violet-100 text-violet-700'
-                    : i === 1 ? 'bg-blue-100 text-blue-700'
-                    : 'bg-sky-100 text-sky-700'
-                  }`}>
-                    {d.icon}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-gray-900 leading-snug" style={{ fontSize: '13px', fontWeight: 600 }}>{d.level}</p>
-                    <p className="text-gray-600" style={{ fontSize: '11px' }}>{d.field}</p>
-                    <p className="text-gray-400 mt-0.5" style={{ fontSize: '10px' }}>{d.school} · {d.year}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Trayectoria profesional */}
-          <div>
-            <p className="text-gray-400 uppercase tracking-widest mb-3" style={{ fontSize: '10px', fontWeight: 600 }}>
-              Trayectoria Profesional
-            </p>
-            <div className="space-y-2">
-              {trajectory.map((t, i) => (
-                <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
-                  t.current ? 'border-[#1e3a5f]/25 bg-[#1e3a5f]/5' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                }`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    t.current ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    <Briefcase className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-gray-900 leading-none" style={{ fontSize: '13px', fontWeight: 600 }}>{t.role}</p>
-                      {t.current && (
-                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full" style={{ fontSize: '9px', fontWeight: 700 }}>
-                          ACTUAL
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-600 mt-0.5" style={{ fontSize: '11px' }}>{t.org}</p>
-                    <p className="text-gray-400 mt-0.5" style={{ fontSize: '10px' }}>{t.period}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

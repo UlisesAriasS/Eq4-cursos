@@ -1,0 +1,90 @@
+# docker-compose.yml — Eq4-Cursos (RAÍZ DEL PROYECTO)
+# Levanta los 3 servicios con: docker-compose up --build -d
+
+services:
+
+  # ── Base de datos MySQL 8 ──────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: eq4_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: eq4cursos
+      MYSQL_USER: eq4user
+      MYSQL_PASSWORD: eq4password
+    ports:
+      - "3307:3306"          # Puerto 3307 en host para no chocar con MySQL local
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "eq4user", "-peq4password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── API FastAPI ────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eq4_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: eq4user
+      DB_PASSWORD: eq4password
+      DB_NAME: eq4cursos
+      APP_ENV: development
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      ALLOWED_ORIGINS: "http://localhost:5173,http://frontend:5173"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── Frontend React/Vite ───────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eq4_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_TARGET: "http://api:8000"   # Dentro de Docker, api es el hostname
+    depends_on:
+      - api
+    volumes:
+      - .:/app
+      - /app/node_modules          # Preservar node_modules del contenedor
+
+  # ── phpMyAdmin — visor de base de datos ───────────────────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: eq4_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: eq4user
+      PMA_PASSWORD: eq4password
+      PMA_DB_URL_ALLOW_AREWRIT: true
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+    name: eq4_mysql_data
+    external: true

@@ -7,7 +7,9 @@ import {
   FileCheck,
   Settings,
   GraduationCap,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { name: 'Perfil del Profesor',   icon: UserCircle,    path: 'perfil'      },
@@ -24,6 +26,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeView, onNavigate }: SidebarProps) {
+  const { docente, logout } = useAuth();
   return (
     <aside className="w-64 flex flex-col h-full" style={{ background: '#162d4a' }}>
 
@@ -135,14 +138,21 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
           <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
             <UserCircle className="w-4 h-4 text-white/80" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-white/90 truncate leading-none" style={{ fontSize: '12px', fontWeight: 500 }}>
-              Carlos Ruiz
+              {docente?.nombre ?? 'Docente'}
             </p>
             <p className="text-white/40 mt-0.5" style={{ fontSize: '10px' }}>
-              Profesor titular
+              {docente?.categoria ?? 'Portal Docente'}
             </p>
           </div>
+          <button
+            onClick={logout}
+            title="Cerrar sesión"
+            className="p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors shrink-0"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </aside>

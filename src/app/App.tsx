@@ -1,15 +1,15 @@
 import { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginPage } from './components/LoginPage';
+import { CompletarPerfil } from './components/CompletarPerfil';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { StudentProjects } from './components/StudentProjects';
 import { TeacherProfile } from './components/TeacherProfile';
 import { GruposColegiados } from './components/GruposColegiados';
 import { CuerpoAcademico } from './components/CuerpoAcademico';
 import { Tutorias } from './components/Tutorias';
 import { ProyectoIntegrador } from './components/ProyectoIntegrador';
 import { SolicitudConstancias } from './components/SolicitudConstancias';
-import { CourseCatalog } from './components/CourseCatalog';
-import { TeacherExpediente } from './components/TeacherExpediente';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -22,19 +22,21 @@ function Placeholder({ title }: { title: string }) {
   );
 }
 
-export default function App() {
+/* ── Dashboard (solo se renderiza si hay sesión) ────────────────────────── */
+function Dashboard() {
+  const { docente } = useAuth();
   const [currentView, setCurrentView] = useState('perfil');
 
   const renderView = () => {
     switch (currentView) {
-      case 'perfil':       return <TeacherProfile />;
-      case 'colegiados':   return <GruposColegiados />;
-      case 'cuerpo':       return <CuerpoAcademico />;
-      case 'tutorias':     return <Tutorias />;
-      case 'proyectos':    return <ProyectoIntegrador />;
-      case 'expediente':   return <SolicitudConstancias />;
-      case 'configuracion':return <Placeholder title="Configuración" />;
-      default:             return <Placeholder title="Perfil del Profesor" />;
+      case 'perfil':        return <TeacherProfile />;
+      case 'colegiados':    return <GruposColegiados />;
+      case 'cuerpo':        return <CuerpoAcademico />;
+      case 'tutorias':      return <Tutorias />;
+      case 'proyectos':     return <ProyectoIntegrador />;
+      case 'expediente':    return <SolicitudConstancias />;
+      case 'configuracion': return <Placeholder title="Configuración" />;
+      default:              return <Placeholder title="Perfil del Profesor" />;
     }
   };
 
@@ -47,6 +49,23 @@ export default function App() {
           {renderView()}
         </main>
       </div>
+
+      {/* Modal de perfil incompleto — se muestra sobre el dashboard */}
+      {docente && !docente.perfil_completo && <CompletarPerfil />}
     </div>
+  );
+}
+
+/* ── Root — maneja el guard de autenticación ─────────────────────────────── */
+function AppRoot() {
+  const { docente } = useAuth();
+  return docente ? <Dashboard /> : <LoginPage />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoot />
+    </AuthProvider>
   );
 }
