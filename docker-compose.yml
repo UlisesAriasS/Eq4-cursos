@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: eq4cursos
+      MYSQL_DATABASE: sistema_etda_pro
       MYSQL_USER: eq4user
       MYSQL_PASSWORD: eq4password
     ports:
@@ -39,7 +39,7 @@ services:
       DB_PORT: 3306
       DB_USER: eq4user
       DB_PASSWORD: eq4password
-      DB_NAME: eq4cursos
+      DB_NAME: sistema_etda_pro
       APP_ENV: development
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
@@ -87,4 +87,3 @@ services:
 volumes:
   mysql_data:
     name: eq4_mysql_data
-    external: true

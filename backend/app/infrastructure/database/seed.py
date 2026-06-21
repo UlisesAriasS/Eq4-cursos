@@ -7,7 +7,7 @@ con contraseñas hasheadas con bcrypt. Se ejecuta al arrancar la API.
 import bcrypt
 from sqlalchemy.orm import Session
 
-from app.infrastructure.database.models import DocenteORM, UsuarioORM
+from app.infrastructure.database.models import CursoCertificacionORM, DocenteORM, RolORM, UsuarioORM
 
 
 def _hash(password: str) -> str:
@@ -18,6 +18,20 @@ def seed_if_empty(db: Session) -> None:
         return  # Ya hay datos, no hacer nada
 
     print("⚙️  Base de datos vacía — insertando datos de prueba...")
+
+    # Insertar roles básicos
+    r1 = RolORM(nombre="Administrador")
+    r2 = RolORM(nombre="Docente")
+    r3 = RolORM(nombre="Alumno")
+    r4 = RolORM(nombre="Supervisor")
+    db.add_all([r1, r2, r3, r4])
+    db.flush()
+
+    # Insertar cursos de prueba
+    c1 = CursoCertificacionORM(nombre="Diplomado en Competencias Docentes", tipo="Curso Docente", horas=120)
+    c2 = CursoCertificacionORM(nombre="Taller de Evaluación por Rúbricas", tipo="Curso Docente", horas=40)
+    db.add_all([c1, c2])
+    db.flush()
 
     password_hash = _hash("profesor123")
 
