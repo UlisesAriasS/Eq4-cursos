@@ -33,6 +33,7 @@ class LoginDocenteUseCase:
 
         return LoginResponse(
             usuario_id=docente.usuario_id,
+            docente_id=docente.id,
             correo=docente.usuario.correo,
             numero_empleado=docente.numero_empleado,
             nombre=docente.nombre,

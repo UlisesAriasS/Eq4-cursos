@@ -13,6 +13,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     usuario_id: int
+    docente_id: int          # ID de la tabla docentes (distinto a usuario_id)
     correo: str
     numero_empleado: str
     nombre: str

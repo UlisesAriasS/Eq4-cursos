@@ -40,6 +40,7 @@ class Docente:
     numero_empleado: str
     nombre: str
     apellidos: str
+    telefono: Optional[str] = None
     categoria: Optional[str] = None
     adscripcion: Optional[str] = None
     grado_academico: Optional[str] = None
@@ -59,3 +60,18 @@ class Docente:
         if self.usuario is None:
             return False
         return self.usuario.esta_activo()
+
+
+@dataclass
+class DocumentoHistorico:
+    """Documento histórico subido por el docente (certificados, diplomados, etc)."""
+    id: int
+    docente_id: int
+    nombre: str
+    institucion: str
+    categoria: str
+    anio: int
+    estatus: str
+    horas: Optional[int] = None
+    archivo_url: Optional[str] = None
+    fecha_registro: Optional[datetime.datetime] = None

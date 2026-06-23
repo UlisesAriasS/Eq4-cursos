@@ -11,6 +11,7 @@ from app.infrastructure.database.connection import settings, SessionLocal
 from app.infrastructure.database.seed import seed_if_empty
 from app.infrastructure.web.routers.docente_router import router as docente_router
 from app.infrastructure.web.routers.auth_router import router as auth_router
+from app.infrastructure.web.routers.proyecto_router import router as proyecto_router
 
 
 @asynccontextmanager
@@ -42,8 +43,9 @@ app.add_middleware(
 )
 
 # ── Routers ────────────────────────────────────────────────────────────────────
-app.include_router(auth_router,    prefix="/api/v1")
-app.include_router(docente_router, prefix="/api/v1")
+app.include_router(auth_router,     prefix="/api/v1")
+app.include_router(docente_router,  prefix="/api/v1")
+app.include_router(proyecto_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Status"])

@@ -1,8 +1,8 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Script de inicialización de la base de datos — sistema_etda_pro
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Script de inicializaciÃ³n de la base de datos â€” sistema_etda_pro
 -- Ejecutar antes de arrancar el backend por primera vez.
 -- Compatible con MySQL 8+
--- ─────────────────────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 SET NAMES utf8mb4;
 
@@ -79,7 +79,7 @@ CREATE TABLE expedientes_docentes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     docente_id INT NOT NULL,
     periodo_id INT NOT NULL,
-    estatus_general ENUM('Abierto', 'Enviado a Revisión', 'Cerrado') DEFAULT 'Abierto',
+    estatus_general ENUM('Abierto', 'Enviado a RevisiÃ³n', 'Cerrado') DEFAULT 'Abierto',
     FOREIGN KEY (docente_id) REFERENCES docentes(id),
     FOREIGN KEY (periodo_id) REFERENCES periodos_academicos(id),
     UNIQUE(docente_id, periodo_id)
@@ -90,7 +90,7 @@ CREATE TABLE evidencias_pedped (
     expediente_id INT NOT NULL,
     rubro_id INT NOT NULL,
     archivo_pdf_url VARCHAR(255) NOT NULL,
-    estatus ENUM('Borrador', 'Enviado', 'En revisión', 'Observado', 'Corregido', 'Validado', 'Rechazado') DEFAULT 'Borrador',
+    estatus ENUM('Borrador', 'Enviado', 'En revisiÃ³n', 'Observado', 'Corregido', 'Validado', 'Rechazado') DEFAULT 'Borrador',
     validador_id INT NULL,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (expediente_id) REFERENCES expedientes_docentes(id) ON DELETE CASCADE,
@@ -123,7 +123,7 @@ CREATE TABLE proyectos_integradores (
     FOREIGN KEY (periodo_id) REFERENCES periodos_academicos(id)
 );
 
--- MODIFICADA: Sistema de doble calificación
+-- MODIFICADA: Sistema de doble calificaciÃ³n
 CREATE TABLE proyecto_alumnos (
     proyecto_id INT NOT NULL,
     alumno_id INT NOT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE materiales_didacticos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     docente_id INT NOT NULL,
     proyecto_id INT NULL,
-    tipo ENUM('Manual', 'Apuntes', 'Material Audiovisual', 'Antología', 'Rúbrica', 'Software') NOT NULL,
+    tipo ENUM('Manual', 'Apuntes', 'Material Audiovisual', 'AntologÃ­a', 'RÃºbrica', 'Software') NOT NULL,
     titulo VARCHAR(200) NOT NULL,
     archivo_url VARCHAR(255) NOT NULL,
     fecha_carga TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -154,7 +154,7 @@ CREATE TABLE entregables_proyecto (
     proyecto_id INT NOT NULL,
     etapa VARCHAR(100) NOT NULL,
     archivo_url VARCHAR(255) NOT NULL,
-    estatus ENUM('Enviado', 'En revisión', 'Observado', 'Validado') DEFAULT 'Enviado',
+    estatus ENUM('Enviado', 'En revisiÃ³n', 'Observado', 'Validado') DEFAULT 'Enviado',
     fecha_entrega TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (proyecto_id) REFERENCES proyectos_integradores(id) ON DELETE CASCADE
 );
@@ -178,7 +178,7 @@ CREATE TABLE vinculacion_uvd (
     beneficiario VARCHAR(200) NOT NULL,
     reporte_impacto_url VARCHAR(255),
     validador_id INT NULL,
-    estatus ENUM('Registrado', 'En Revisión', 'Validado') DEFAULT 'Registrado',
+    estatus ENUM('Registrado', 'En RevisiÃ³n', 'Validado') DEFAULT 'Registrado',
     FOREIGN KEY (proyecto_id) REFERENCES proyectos_integradores(id) ON DELETE CASCADE,
     FOREIGN KEY (validador_id) REFERENCES supervisores(id)
 );
@@ -199,7 +199,7 @@ CREATE TABLE competencias_academicas (
 CREATE TABLE cursos_certificaciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
-    tipo ENUM('Curso Alumno', 'Curso Docente', 'Certificación Oficial') NOT NULL,
+    tipo ENUM('Curso Alumno', 'Curso Docente', 'CertificaciÃ³n Oficial') NOT NULL,
     horas INT NOT NULL,
     responsable_id INT NULL,
     FOREIGN KEY (responsable_id) REFERENCES docentes(id) ON DELETE SET NULL
@@ -248,19 +248,19 @@ CREATE TABLE bitacora_sistema (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
--- ── Datos de prueba iniciales ───────────────────────────────────────────────────────────
+-- â”€â”€ Datos de prueba iniciales â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
--- Roles básicos
+-- Roles bÃ¡sicos
 INSERT INTO roles (nombre) VALUES ('Administrador'), ('Docente'), ('Alumno'), ('Supervisor');
 
 -- Cursos de prueba
 INSERT INTO cursos_certificaciones (nombre, tipo, horas) VALUES
 ('Diplomado en Competencias Docentes', 'Curso Docente', 120),
-('Taller de Evaluación por Rúbricas', 'Curso Docente', 40),
+('Taller de EvaluaciÃ³n por RÃºbricas', 'Curso Docente', 40),
 ('Taller de Moodle Avanzado', 'Curso Docente', 40),
-('Curso de Ética Profesional', 'Curso Docente', 20);
+('Curso de Ã‰tica Profesional', 'Curso Docente', 20);
 
--- Usuario docente 1 — perfil COMPLETO  (password: profesor123)
+-- Usuario docente 1 â€” perfil COMPLETO  (password: profesor123)
 -- Hash bcrypt generado con: python -c "import bcrypt; print(bcrypt.hashpw(b'profesor123', bcrypt.gensalt()).decode())"
 INSERT INTO usuarios (correo, password_hash, rol_id, activo)
 VALUES ('juan.ramirez@universidad.edu.mx',
@@ -272,14 +272,14 @@ VALUES (
     LAST_INSERT_ID(),
     'EMP-2024-001',
     'Juan Carlos',
-    'Ramírez Torres',
+    'RamÃ­rez Torres',
     'Profesor Titular A',
-    'Departamento de Sistemas y Computación',
-    'Maestría',
+    'Departamento de Sistemas y ComputaciÃ³n',
+    'MaestrÃ­a',
     TRUE
 );
 
--- Historial de capacitación para Juan
+-- Historial de capacitaciÃ³n para Juan
 INSERT INTO historial_capacitacion (usuario_id, curso_id, estatus, fecha_conclusion)
 VALUES
     (1, 1, 'Aprobado', '2025-06-30'),
@@ -287,7 +287,7 @@ VALUES
     (1, 3, 'Inscrito', NULL),
     (1, 4, 'Reprobado', '2024-12-20');
 
--- Usuario docente 2 — perfil INCOMPLETO para probar el modal CompletarPerfil
+-- Usuario docente 2 â€” perfil INCOMPLETO para probar el modal CompletarPerfil
 INSERT INTO usuarios (correo, password_hash, rol_id, activo)
 VALUES ('maria.lopez@universidad.edu.mx',
         '$2b$12$2mSK3enu1XVE6oKUQpLi9OZpPbOjuqV6gB9W4i5ZknUGc3Q0lGLcm',
@@ -297,8 +297,8 @@ INSERT INTO docentes (usuario_id, numero_empleado, nombre, apellidos, categoria,
 VALUES (
     LAST_INSERT_ID(),
     'EMP-2024-002',
-    'María Elena',
-    'López Sánchez',
+    'MarÃ­a Elena',
+    'LÃ³pez SÃ¡nchez',
     NULL,
     NULL,
     NULL,

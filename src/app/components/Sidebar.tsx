@@ -12,12 +12,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { name: 'Perfil del Profesor',   icon: UserCircle,    path: 'perfil'      },
-  { name: 'Grupos Colegiados',     icon: Users,         path: 'colegiados'  },
-  { name: 'Cuerpo Académico',      icon: ShieldCheck,   path: 'cuerpo'      },
-  { name: 'Tutorías',              icon: MessageSquare, path: 'tutorias'    },
-  { name: 'Proyecto Integrador',   icon: Briefcase,     path: 'proyectos'   },
-  { name: 'Solicitud Constancias', icon: FileCheck,     path: 'expediente'  },
+  { name: 'Perfil del Profesor',   icon: UserCircle,    path: 'perfil'        },
+  { name: 'Grupos Colegiados',     icon: Users,         path: 'colegiados'    },
+  { name: 'Cuerpo Académico',      icon: ShieldCheck,   path: 'cuerpo'        },
+  { name: 'Tutorías',              icon: MessageSquare, path: 'tutorias'      },
+  { name: 'Proyecto Integrador',   icon: Briefcase,     path: 'proyectos'     },
+  { name: 'Solicitud Constancias', icon: FileCheck,     path: 'expediente'    },
 ];
 
 interface SidebarProps {

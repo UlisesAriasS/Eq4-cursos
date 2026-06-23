@@ -57,3 +57,25 @@ class DocenteRepositoryPort(ABC):
         Retorna None si no existe.
         """
         ...
+
+    @abstractmethod
+    def obtener_documentos_historicos(self, docente_id: int) -> List["DocumentoHistorico"]:
+        """
+        Lista todos los documentos históricos asociados a un docente_id.
+        """
+        ...
+
+    @abstractmethod
+    def agregar_documento_historico(self, documento: "DocumentoHistorico") -> "DocumentoHistorico":
+        """
+        Agrega un nuevo documento histórico al docente.
+        Retorna la entidad guardada con su ID generado.
+        """
+        ...
+
+    @abstractmethod
+    def eliminar_documento_historico(self, docente_id: int, documento_id: int) -> bool:
+        """
+        Elimina un documento histórico si pertenece al docente.
+        """
+        ...

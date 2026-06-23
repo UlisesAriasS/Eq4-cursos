@@ -33,6 +33,7 @@ class PerfilDocenteResponse(BaseModel):
     nombre: str
     apellidos: str
     nombre_completo: str
+    telefono: Optional[str] = None
     categoria: Optional[str] = None
     adscripcion: Optional[str] = None
     grado_academico: Optional[str] = None
@@ -46,6 +47,9 @@ class HistorialCapacitacionItemResponse(BaseModel):
     """Un ítem del historial de capacitación."""
     id: int
     curso_id: int
+    nombre_curso: str
+    tipo_curso: str
+    horas: int
     estatus: str
     fecha_conclusion: Optional[datetime.date] = None
 
@@ -81,3 +85,33 @@ class ActualizarPerfilRequest(BaseModel):
         max_length=100,
         examples=["Profesor Titular A", "Profesor Asociado B"],
     )
+    telefono: Optional[str] = Field(
+        default=None,
+        max_length=20,
+        examples=["5512345678"],
+    )
+
+
+class DocumentoHistoricoResponse(BaseModel):
+    id: int
+    nombre: str
+    institucion: str
+    categoria: str
+    anio: int
+    horas: Optional[int]
+    estatus: str
+    archivo_url: Optional[str]
+    fecha_registro: datetime.datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AgregarDocumentoHistoricoRequest(BaseModel):
+    nombre: str = Field(..., max_length=255)
+    institucion: str = Field(..., max_length=255)
+    categoria: str = Field(..., max_length=50)
+    anio: int
+    horas: Optional[int] = None
+    estatus: str = Field(..., max_length=50)
+    archivo_url: Optional[str] = Field(None, max_length=500)
+

@@ -25,7 +25,14 @@ function Placeholder({ title }: { title: string }) {
 /* ── Dashboard (solo se renderiza si hay sesión) ────────────────────────── */
 function Dashboard() {
   const { docente } = useAuth();
-  const [currentView, setCurrentView] = useState('perfil');
+  const [currentView, setCurrentView] = useState(
+    () => localStorage.getItem('currentView') || 'perfil'
+  );
+
+  const handleNavigate = (view: string) => {
+    setCurrentView(view);
+    localStorage.setItem('currentView', view);
+  };
 
   const renderView = () => {
     switch (currentView) {
@@ -42,7 +49,7 @@ function Dashboard() {
 
   return (
     <div className="size-full flex bg-[#f5f6f8]">
-      <Sidebar activeView={currentView} onNavigate={setCurrentView} />
+      <Sidebar activeView={currentView} onNavigate={handleNavigate} />
       <div className="flex-1 flex flex-col">
         <Header />
         <main className="flex-1 p-6 overflow-hidden">

@@ -43,10 +43,13 @@ class ObtenerHistorialCapacitacionUseCase:
 
         items = [
             HistorialCapacitacionItemResponse(
-                id=r.id,
-                curso_id=r.curso_id,
-                estatus=r.estatus,
-                fecha_conclusion=r.fecha_conclusion,
+                id=r["id"],
+                curso_id=r["curso_id"],
+                nombre_curso=r["nombre_curso"],
+                tipo_curso=r["tipo_curso"],
+                horas=r["horas"],
+                estatus=r["estatus"],
+                fecha_conclusion=r["fecha_conclusion"],
             )
             for r in registros
         ]

@@ -44,7 +44,7 @@ interface HistoricalCert {
   year: string;
   category: CertCategory;
   hours?: number;
-  status: 'validado' | 'pendiente';
+  status: 'Vigente' | 'Expirado' | 'Permanente' | 'validado' | 'pendiente';
 }
 
 /* ─────────────────────────── Data ──────────────────────────────── */
@@ -77,7 +77,7 @@ const initialCerts: HistoricalCert[] = [
 
 /* ─────────────────────────── CV Section ────────────────────────── */
 
-function CVSummary() {
+function CVSummary({ certs }: { certs: HistoricalCert[] }) {
   const { docente, updateDocente } = useAuth();
 
   // Campos editables
@@ -85,15 +85,9 @@ function CVSummary() {
   const [grado, setGrado]           = useState(docente?.grado_academico ?? '');
   const [categoria, setCategoria]   = useState(docente?.categoria ?? '');
   const [adscripcion, setAdscripcion] = useState(docente?.adscripcion ?? '');
+  const [telefono, setTelefono]     = useState(docente?.telefono ?? '');
   const [saving, setSaving]         = useState(false);
   const [saveMsg, setSaveMsg]       = useState<string | null>(null);
-
-  const stats = [
-    { label: 'Número empleado', value: docente?.numero_empleado ?? '—', icon: <Star className="w-4 h-4 text-amber-500" /> },
-    { label: 'Grado académico', value: docente?.grado_academico ?? '—', icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
-    { label: 'PTC',             value: docente?.es_ptc ? 'Sí' : 'No',  icon: <Award className="w-4 h-4 text-violet-500" /> },
-    { label: 'Correo',         value: docente?.correo ?? '—',           icon: <Mail className="w-4 h-4 text-sky-500" /> },
-  ];
 
   const handleSave = async () => {
     if (!docente) return;
@@ -104,8 +98,9 @@ function CVSummary() {
         grado_academico: grado || undefined,
         categoria: categoria || undefined,
         adscripcion: adscripcion || undefined,
+        telefono: telefono || undefined,
       });
-      updateDocente({ grado_academico: grado, categoria, adscripcion });
+      updateDocente({ grado_academico: grado, categoria, adscripcion, telefono });
       setSaveMsg('Cambios guardados');
       setEditing(false);
     } catch {
@@ -116,60 +111,72 @@ function CVSummary() {
     }
   };
 
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      {/* Profile banner */}
-      <div className="h-20 w-full" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5280 60%, #3a6fa0 100%)' }} />
+  const handleDescargarZip = () => {
+    if (!docente) return;
+    const url = api.getDescargarExpedienteUrl(docente.usuario_id);
+    window.open(url, '_blank');
+  };
 
-      <div className="px-6 pb-6">
-        {/* Avatar row */}
-        <div className="flex items-end justify-between -mt-8 mb-5">
-          <div className="flex items-end gap-4">
-            <div className="w-20 h-20 rounded-2xl border-4 border-white bg-[#1e3a5f] flex items-center justify-center shadow-lg shrink-0">
-              <GraduationCap className="w-9 h-9 text-white" />
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
+      {/* Profile banner */}
+      <div className="h-24 w-full" style={{ background: '#2d5280' }} />
+
+      <div className="px-8 pb-8 relative">
+        {/* Avatar and Top Info */}
+        <div className="flex items-end justify-between -mt-10 mb-6">
+          <div className="flex items-end gap-5">
+            <div className="w-24 h-24 rounded-2xl border-4 border-white bg-[#1e3a5f] flex items-center justify-center shadow-lg shrink-0">
+              <GraduationCap className="w-10 h-10 text-white" />
             </div>
-            <div className="pb-1">
-              <h2 className="text-gray-900" style={{ fontSize: '18px', fontWeight: 700 }}>
+            <div className="pb-2">
+              <h2 className="text-gray-900" style={{ fontSize: '22px', fontWeight: 700 }}>
                 {docente?.nombre_completo ?? 'Docente'}
               </h2>
-              <p className="text-gray-500 flex items-center gap-1.5 mt-0.5" style={{ fontSize: '12px' }}>
-                <Building2 className="w-3.5 h-3.5" />
-                {docente?.categoria ?? 'Sin categoría'} · {docente?.adscripcion ?? 'Sin adscripción'}
+              <p className="text-gray-500 flex items-center gap-1.5 mt-1" style={{ fontSize: '13px' }}>
+                <Building2 className="w-4 h-4" />
+                {docente?.categoria ?? 'Sin categoría'} · {docente?.adscripcion ?? 'Universidad Tecnológica Nacional'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {saveMsg && (
-              <span className={`text-xs px-3 py-1.5 rounded-xl ${
-                saveMsg.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'
-              }`}>{saveMsg}</span>
-            )}
+          
+          {/* Action buttons */}
+          <div className="flex items-center gap-3 pb-2">
+            <button
+              onClick={handleDescargarZip}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#1e3a5f] text-white rounded-xl hover:bg-[#2d5280] transition-colors shadow-sm"
+              style={{ fontSize: '14px', fontWeight: 600 }}
+            >
+              <Download className="w-4 h-4" />
+              Descargar todo como ZIP
+            </button>
             <button
               onClick={() => editing ? handleSave() : setEditing(true)}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] text-white rounded-xl hover:bg-[#2d5280] transition-colors shrink-0 shadow-sm disabled:opacity-50"
-              style={{ fontSize: '13px', fontWeight: 500 }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors shadow-sm disabled:opacity-50"
+              style={{ fontSize: '14px', fontWeight: 600 }}
             >
               {editing ? (
-                <><Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar cambios'}</>
+                <><Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar'}</>
               ) : (
-                <><Pencil className="w-4 h-4" />Editar perfil</>
+                <><Pencil className="w-4 h-4" />Editar Perfil</>
               )}
             </button>
           </div>
         </div>
 
-        {/* Editable fields (only when editing) */}
+        {/* Editable fields */}
         {editing && (
-          <div className="grid grid-cols-3 gap-3 mb-5 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="grid grid-cols-4 gap-3 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Grado académico</label>
               <select
                 value={grado}
                 onChange={(e) => setGrado(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none"
               >
-                {['Licenciatura','Especialidad','Maestría','Doctorado','Posdoctorado'].map(g =>
+                <option value="">Seleccionar...</option>
+                {['Licenciatura','Ingeniería','Especialidad','Maestría','Doctorado','Posdoctorado'].map(g =>
                   <option key={g} value={g}>{g}</option>
                 )}
               </select>
@@ -179,8 +186,9 @@ function CVSummary() {
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none"
               >
+                <option value="">Seleccionar...</option>
                 {['Profesor Titular A','Profesor Titular B','Profesor Titular C',
                   'Profesor Asociado A','Profesor Asociado B','Profesor Asociado C',
                   'Profesor de Asignatura'].map(c => <option key={c} value={c}>{c}</option>)}
@@ -191,40 +199,141 @@ function CVSummary() {
               <input
                 value={adscripcion}
                 onChange={(e) => setAdscripcion(e.target.value)}
-                placeholder="Departamento..."
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20"
+                placeholder="Universidad Tecnológica Nacional"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Teléfono</label>
+              <input
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                placeholder="+52 55 1234 5678"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none"
               />
             </div>
           </div>
         )}
+        
+        {saveMsg && (
+          <div className="mb-4 text-sm text-green-600 bg-green-50 p-2 rounded-lg inline-block">
+            {saveMsg}
+          </div>
+        )}
 
         {/* Contact chips */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {[
-            { icon: <Mail className="w-3.5 h-3.5" />, text: docente?.correo ?? '—' },
-            { icon: <MapPin className="w-3.5 h-3.5" />, text: docente?.adscripcion ?? '—' },
-            { icon: <Calendar className="w-3.5 h-3.5" />, text: `Empleado: ${docente?.numero_empleado ?? '—'}` },
-          ].map((c) => (
-            <span key={c.text} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600" style={{ fontSize: '12px' }}>
-              {c.icon}{c.text}
-            </span>
-          ))}
+        <div className="flex flex-wrap gap-4 mb-8 border-b border-gray-100 pb-6">
+          <span className="flex items-center gap-2 text-gray-600 px-4 py-2 border border-gray-200 rounded-full" style={{ fontSize: '13px' }}>
+            <Mail className="w-4 h-4 text-gray-400" /> {docente?.correo ?? 'correo@ejemplo.com'}
+          </span>
+          <span className="flex items-center gap-2 text-gray-600 px-4 py-2 border border-gray-200 rounded-full" style={{ fontSize: '13px' }}>
+            <Phone className="w-4 h-4 text-gray-400" /> {docente?.telefono || '+52 55 1234 5678'}
+          </span>
+          <span className="flex items-center gap-2 text-gray-600 px-4 py-2 border border-gray-200 rounded-full" style={{ fontSize: '13px' }}>
+            <MapPin className="w-4 h-4 text-gray-400" /> Ciudad de México
+          </span>
+          <span className="flex items-center gap-2 text-gray-600 px-4 py-2 border border-gray-200 rounded-full" style={{ fontSize: '13px' }}>
+            <Calendar className="w-4 h-4 text-gray-400" /> Ingreso: Ago 2019
+          </span>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          {stats.map((s) => (
-            <div key={s.label} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
+        <div className="grid grid-cols-4 gap-4 mb-10">
+          {[
+            { label: 'Años de experiencia', value: '12+', icon: <Star className="w-5 h-5 text-amber-500" />, bg: 'bg-amber-50' },
+            { label: 'Cursos impartidos', value: '38', icon: <BookOpen className="w-5 h-5 text-blue-500" />, bg: 'bg-blue-50' },
+            { label: 'Certificaciones', value: certs.filter(c => c.category.includes('ertificaci')).length.toString(), icon: <Award className="w-5 h-5 text-violet-500" />, bg: 'bg-violet-50' },
+            { label: 'Diplomados', value: certs.filter(c => c.category === 'Diplomado').length.toString(), icon: <Layers className="w-5 h-5 text-sky-500" />, bg: 'bg-sky-50' },
+          ].map((s) => (
+            <div key={s.label} className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm">
+              <div className={`w-12 h-12 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
                 {s.icon}
               </div>
               <div className="min-w-0">
-                <p className="text-gray-900 truncate" style={{ fontSize: '13px', fontWeight: 700, lineHeight: 1 }}>{s.value}</p>
-                <p className="text-gray-500 mt-0.5" style={{ fontSize: '10px' }}>{s.label}</p>
+                <p className="text-gray-900" style={{ fontSize: '20px', fontWeight: 800, lineHeight: 1 }}>{s.value}</p>
+                <p className="text-gray-500 mt-1" style={{ fontSize: '12px' }}>{s.label}</p>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Dos columnas de información estática */}
+        <div className="grid grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">Formación Académica</h3>
+            <div className="space-y-4">
+              <div className="flex gap-4 p-4 border border-gray-100 rounded-2xl shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5 text-violet-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">Doctorado</h4>
+                  <p className="text-gray-600 text-xs">Ciencias Computacionales</p>
+                  <p className="text-gray-400 text-xs mt-1">CINVESTAV - 2018</p>
+                </div>
+              </div>
+              <div className="flex gap-4 p-4 border border-gray-100 rounded-2xl shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">Maestría</h4>
+                  <p className="text-gray-600 text-xs">Redes y Telecomunicaciones</p>
+                  <p className="text-gray-400 text-xs mt-1">UNAM - 2014</p>
+                </div>
+              </div>
+              <div className="flex gap-4 p-4 border border-gray-100 rounded-2xl shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5 text-sky-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">Ingeniería</h4>
+                  <p className="text-gray-600 text-xs">Sistemas Computacionales</p>
+                  <p className="text-gray-400 text-xs mt-1">IPN - 2011</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">Trayectoria Profesional</h3>
+            <div className="space-y-4">
+              <div className="flex gap-4 p-4 border border-[#1e3a5f] bg-[#1e3a5f]/5 rounded-2xl shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#1e3a5f] flex items-center justify-center shrink-0">
+                  <Briefcase className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                    Profesor Titular A <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">ACTUAL</span>
+                  </h4>
+                  <p className="text-gray-600 text-xs">Universidad Tecnológica Nacional</p>
+                  <p className="text-gray-400 text-xs mt-1">2019 – presente</p>
+                </div>
+              </div>
+              <div className="flex gap-4 p-4 border border-gray-100 rounded-2xl shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                  <Briefcase className="w-5 h-5 text-gray-500" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">Investigador Asociado</h4>
+                  <p className="text-gray-600 text-xs">CINVESTAV – Dpto. de Redes</p>
+                  <p className="text-gray-400 text-xs mt-1">2016 – 2019</p>
+                </div>
+              </div>
+              <div className="flex gap-4 p-4 border border-gray-100 rounded-2xl shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                  <Briefcase className="w-5 h-5 text-gray-500" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">Docente de Asignatura</h4>
+                  <p className="text-gray-600 text-xs">IPN – ESCOM</p>
+                  <p className="text-gray-400 text-xs mt-1">2014 – 2016</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -242,6 +351,8 @@ function UploadCertArea({ onAdd }: { onAdd: (cert: HistoricalCert) => void }) {
   const [year, setYear]                     = useState(new Date().getFullYear().toString());
   const inputRef                            = useRef<HTMLInputElement>(null);
 
+  const [saving, setSaving]                 = useState(false);
+
   const handleFile = (name: string) => setFileName(name);
 
   const handleDrop = (e: React.DragEvent) => {
@@ -251,20 +362,42 @@ function UploadCertArea({ onAdd }: { onAdd: (cert: HistoricalCert) => void }) {
     if (f) handleFile(f.name);
   };
 
-  const handleSubmit = () => {
-    if (!fileName || !certName || !institution) return;
-    onAdd({
-      id: Date.now().toString(),
-      name: certName,
-      institution,
-      year,
-      category: selectedCategory,
-      status: 'pendiente',
-    });
-    setFileName(null);
-    setCertName('');
-    setInstitution('');
-    setYear(new Date().getFullYear().toString());
+  const { docente } = useAuth();
+
+  const handleSubmit = async () => {
+    if (!fileName || !certName || !institution || !docente) return;
+    
+    setSaving(true);
+    try {
+      const resp = await api.addDocumentoHistorico(docente.usuario_id, {
+        nombre: certName,
+        institucion: institution,
+        categoria: selectedCategory,
+        anio: parseInt(year) || new Date().getFullYear(),
+        horas: null, // Si quisieras un input de horas, lo pondrías aquí
+        estatus: 'Vigente',
+        archivo_url: fileName
+      });
+
+      onAdd({
+        id: resp.id.toString(),
+        name: resp.nombre,
+        institution: resp.institucion,
+        year: resp.anio.toString(),
+        category: resp.categoria as CertCategory,
+        hours: resp.horas || undefined,
+        status: resp.estatus as any,
+      });
+
+      setFileName(null);
+      setCertName('');
+      setInstitution('');
+      setYear(new Date().getFullYear().toString());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const cat = categoryConfig[selectedCategory];
@@ -375,12 +508,12 @@ function UploadCertArea({ onAdd }: { onAdd: (cert: HistoricalCert) => void }) {
           {/* Submit */}
           <button
             onClick={handleSubmit}
-            disabled={!fileName || !certName || !institution}
+            disabled={!fileName || !certName || !institution || saving}
             className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-xl hover:bg-[#2d5280] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             style={{ fontSize: '13px', fontWeight: 500 }}
           >
             <Plus className="w-4 h-4" />
-            Agregar
+            {saving ? 'Guardando...' : 'Agregar'}
           </button>
         </div>
       </div>
@@ -498,20 +631,30 @@ function CertificatesTable({ certs, onRemove }: { certs: HistoricalCert[]; onRem
                     </td>
                     {/* Status */}
                     <td className="px-5 py-3.5">
-                      {cert.status === 'validado' ? (
+                      {cert.status === 'Vigente' || cert.status === 'Permanente' || cert.status === 'validado' ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full" style={{ fontSize: '11px', fontWeight: 600 }}>
-                          <CheckCircle2 className="w-3 h-3" /> Validado
+                          <CheckCircle2 className="w-3 h-3" /> {cert.status}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full" style={{ fontSize: '11px', fontWeight: 600 }}>
-                          <Clock className="w-3 h-3" /> Pendiente
+                          <Clock className="w-3 h-3" /> {cert.status}
                         </span>
                       )}
                     </td>
                     {/* Actions */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 rounded-lg text-[#1e3a5f] hover:bg-[#1e3a5f]/10 transition-colors" title="Descargar">
+                        <button 
+                          className="p-1.5 rounded-lg text-[#1e3a5f] hover:bg-[#1e3a5f]/10 transition-colors" 
+                          title="Descargar"
+                          onClick={() => {
+                            // Dummy download for MVP using fileName
+                            const a = document.createElement('a');
+                            a.href = `data:text/plain;charset=utf-8,Contenido de ${cert.name}`;
+                            a.download = cert.name + '.pdf';
+                            a.click();
+                          }}
+                        >
                           <Download className="w-3.5 h-3.5" />
                         </button>
                         <button
@@ -537,14 +680,39 @@ function CertificatesTable({ certs, onRemove }: { certs: HistoricalCert[]; onRem
 /* ──────────────────────────── Main View ────────────────────────── */
 
 export function TeacherProfile() {
-  const [certs, setCerts] = useState<HistoricalCert[]>(initialCerts);
+  const [certs, setCerts] = useState<HistoricalCert[]>([]);
+  const { docente } = useAuth();
+
+  useEffect(() => {
+    if (docente?.usuario_id) {
+      api.getDocumentosHistoricos(docente.usuario_id).then(docs => {
+        setCerts(docs.map(d => ({
+          id: d.id.toString(),
+          name: d.nombre,
+          institution: d.institucion,
+          category: d.categoria as CertCategory,
+          year: d.anio.toString(),
+          hours: d.horas || undefined,
+          status: d.estatus as any
+        })));
+      }).catch(console.error);
+    }
+  }, [docente?.usuario_id]);
 
   const addCert = (cert: HistoricalCert) => setCerts((prev) => [cert, ...prev]);
-  const removeCert = (id: string) => setCerts((prev) => prev.filter((c) => c.id !== id));
+  const removeCert = async (id: string) => {
+    if (!docente) return;
+    try {
+      await api.deleteDocumentoHistorico(docente.usuario_id, id);
+      setCerts((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error("Error eliminando", err);
+    }
+  };
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto p-8">
         {/* Page title */}
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-1">Perfil del Profesor</h1>
@@ -552,7 +720,7 @@ export function TeacherProfile() {
         </div>
 
         {/* CV Summary card */}
-        <CVSummary />
+        <CVSummary certs={certs} />
 
         {/* Bottom section: upload + table */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">

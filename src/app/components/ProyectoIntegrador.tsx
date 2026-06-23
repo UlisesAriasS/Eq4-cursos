@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   Save,
@@ -18,12 +18,39 @@ import {
   BarChart2,
   Info,
   Check,
+  Loader2,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 /* ─────────────────────────── Types ─────────────────────────────── */
 
+interface AlumnoAPI {
+  alumno_id: number;
+  nombre: string;
+  apellidos: string;
+  matricula: string;
+  programa_educativo: string | null;
+  grupo: string;
+  rol_equipo: string | null;
+  calificacion_parcial_curso: number | null;
+  calificacion_general_proyecto: number | null;
+}
+
+interface ProyectoAPI {
+  id: number;
+  nombre_proyecto: string;
+  descripcion: string;
+  linea_trabajo: string | null;
+  estatus_general: string;
+  fecha_registro: string;
+  periodo_id: number;
+  periodo_nombre: string | null;
+  alumnos: AlumnoAPI[];
+}
+
 interface Student {
-  id: string;
+  id: string;      // alumno_id como string
+  alumno_id: number;
   name: string;
   matricula: string;
   degree: string;
@@ -37,9 +64,8 @@ interface ProjectInfo {
   name: string;
   period: string;
   area: string;
-  director: string;
-  maxStudents: number;
   deadline: string;
+  maxStudents: number;
 }
 
 /* ─────────────────────────── Constants ─────────────────────────── */
@@ -52,26 +78,6 @@ const degrees = [
 ];
 
 const groups = ['Grupo A', 'Grupo B', 'Grupo C', 'Grupo D'];
-
-const project: ProjectInfo = {
-  name: 'Sistema de Gestión Hospitalaria con Módulo de IA',
-  period: '2026-I · Ene – Jun 2026',
-  area: 'Ingeniería de Software y Sistemas Inteligentes',
-  director: 'Dr. Carlos Ruiz Mendoza',
-  maxStudents: 12,
-  deadline: '20 jun 2026',
-};
-
-const initialStudents: Student[] = [
-  { id: 's1', name: 'Ana Sofía Martínez López',   matricula: '2024-10045', degree: 'Ing. en Sistemas Computacionales',      group: 'Grupo A', partialGrade: '9.2', generalGrade: '9.0', saved: true  },
-  { id: 's2', name: 'Carlos Eduardo Pérez Ruiz',  matricula: '2023-20178', degree: 'Ing. en Redes y Telecomunicaciones',     group: 'Grupo A', partialGrade: '7.5', generalGrade: '7.8', saved: true  },
-  { id: 's3', name: 'Valentina Torres Herrera',   matricula: '2024-10089', degree: 'Ing. en Sistemas Computacionales',      group: 'Grupo B', partialGrade: '9.8', generalGrade: '',    saved: false },
-  { id: 's4', name: 'Diego Alejandro Ramírez',    matricula: '2022-30344', degree: 'Lic. en Administración de TI',          group: 'Grupo B', partialGrade: '8.0', generalGrade: '8.5', saved: true  },
-  { id: 's5', name: 'Fernanda Guzmán Soto',       matricula: '2023-21456', degree: 'Ing. en Tecnologías de la Información', group: 'Grupo C', partialGrade: '',    generalGrade: '',    saved: false },
-  { id: 's6', name: 'Rodrigo Mendoza Fuentes',    matricula: '2024-10203', degree: 'Ing. en Redes y Telecomunicaciones',     group: 'Grupo C', partialGrade: '6.5', generalGrade: '7.0', saved: true  },
-  { id: 's7', name: 'Isabela Vega Castillo',      matricula: '2023-20890', degree: 'Ing. en Sistemas Computacionales',      group: 'Grupo A', partialGrade: '10',  generalGrade: '9.5', saved: true  },
-  { id: 's8', name: 'Emilio Sánchez Morales',     matricula: '2022-31102', degree: 'Lic. en Administración de TI',          group: 'Grupo D', partialGrade: '',    generalGrade: '',    saved: false },
-];
 
 /* ─────────────────── Grade badge helper ────────────────────────── */
 
@@ -255,30 +261,108 @@ function RegisterModal({ onClose, onAdd }: { onClose: () => void; onAdd: (s: Stu
 /* ─────────────────────────── Main view ─────────────────────────── */
 
 export function ProyectoIntegrador() {
-  const [students, setStudents]     = useState<Student[]>(initialStudents);
-  const [search, setSearch]         = useState('');
+  const { docente } = useAuth();
+  const [students, setStudents]       = useState<Student[]>([]);
+  const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
+  const [proyectoId, setProyectoId]   = useState<number | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [apiError, setApiError]       = useState<string | null>(null);
+  const [saveError, setSaveError]     = useState<string | null>(null);
+  const [search, setSearch]           = useState('');
   const [groupFilter, setGroupFilter] = useState<string>('Todos');
-  const [showModal, setShowModal]   = useState(false);
-  const [saveFlash, setSaveFlash]   = useState(false);
-  const [grpOpen, setGrpOpen]       = useState(false);
+  const [showModal, setShowModal]     = useState(false);
+  const [saveFlash, setSaveFlash]     = useState(false);
+  const [saving, setSaving]           = useState(false);
+
+  // Carga inicial: obtiene la lista de proyectos del docente
+  useEffect(() => {
+    if (!docente) return;
+    setLoading(true);
+    // Usamos docente_id (ID de tabla docentes) para buscar proyectos donde el docente es director
+    const docenteId = (docente as any).docente_id ?? docente.usuario_id;
+    fetch(`/api/v1/proyectos/docente/${docenteId}`)
+      .then((r) => r.json())
+      .then((proyectos: ProyectoAPI[]) => {
+        if (!proyectos || proyectos.length === 0) {
+          setLoading(false);
+          return;
+        }
+        const p = proyectos[0]; // El primer proyecto del docente
+        setProyectoId(p.id);
+        setProjectInfo({
+          name: p.nombre_proyecto,
+          period: p.periodo_nombre ?? `Período ${p.periodo_id}`,
+          area: p.linea_trabajo ?? 'Sin línea de trabajo',
+          deadline: new Date(p.fecha_registro).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }),
+          maxStudents: 12,
+        });
+        // Cargar detalle con alumnos
+        return fetch(`/api/v1/proyectos/${p.id}`);
+      })
+      .then((r) => r?.json())
+      .then((detalle: ProyectoAPI | undefined) => {
+        if (!detalle) return;
+        const mapped: Student[] = detalle.alumnos.map((a) => ({
+          id: String(a.alumno_id),
+          alumno_id: a.alumno_id,
+          name: `${a.nombre} ${a.apellidos}`,
+          matricula: a.matricula,
+          degree: a.programa_educativo ?? 'Programa no especificado',
+          group: `Grupo ${a.grupo}`,
+          partialGrade: a.calificacion_parcial_curso != null ? String(a.calificacion_parcial_curso) : '',
+          generalGrade: a.calificacion_general_proyecto != null ? String(a.calificacion_general_proyecto) : '',
+          saved: true,
+        }));
+        setStudents(mapped);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setApiError(err.message ?? 'Error al cargar el proyecto');
+        setLoading(false);
+      });
+  }, [docente]);
 
   const updateGrade = (id: string, field: 'partialGrade' | 'generalGrade', value: string) => {
     setStudents((prev) => prev.map((s) => s.id === id ? { ...s, [field]: value, saved: false } : s));
   };
 
-  const saveAll = () => {
+  const saveAll = async () => {
     const allValid = students.every((s) =>
       (s.partialGrade === '' || isValidGrade(s.partialGrade)) &&
       (s.generalGrade === '' || isValidGrade(s.generalGrade))
     );
-    if (!allValid) return;
-    setStudents((prev) => prev.map((s) => ({ ...s, saved: true })));
-    setSaveFlash(true);
-    setTimeout(() => setSaveFlash(false), 2500);
+    if (!allValid || !proyectoId) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const payload = students.map((s) => ({
+        alumno_id: (s as any).alumno_id,
+        calificacion_parcial_curso: s.partialGrade !== '' ? parseFloat(s.partialGrade) : null,
+        calificacion_general_proyecto: s.generalGrade !== '' ? parseFloat(s.generalGrade) : null,
+      }));
+      const res = await fetch(`/api/v1/proyectos/${proyectoId}/calificaciones`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: `Error ${res.status}` }));
+        throw new Error(err.detail ?? 'Error al guardar');
+      }
+      setStudents((prev) => prev.map((s) => ({ ...s, saved: true })));
+      setSaveFlash(true);
+      setTimeout(() => setSaveFlash(false), 2500);
+    } catch (err: any) {
+      setSaveError(err.message ?? 'Error al guardar las calificaciones');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addStudent = (s: Student) => setStudents((prev) => [...prev, s]);
   const removeStudent = (id: string) => setStudents((prev) => prev.filter((s) => s.id !== id));
+
+  const groups = [...new Set(students.map((s) => s.group))].sort();
 
   const visible = students.filter((s) => {
     const ms = s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -298,6 +382,33 @@ export function ProyectoIntegrador() {
     acc[g] = students.filter((s) => s.group === g).length;
     return acc;
   }, {} as Record<string, number>);
+
+  // ── Loading / Error states
+  if (loading) return (
+    <div className="h-full flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="w-10 h-10 text-[#1e3a5f] animate-spin" />
+        <p className="text-sm text-gray-500">Cargando proyecto…</p>
+      </div>
+    </div>
+  );
+
+  if (apiError) return (
+    <div className="h-full flex items-center justify-center">
+      <div className="text-center bg-red-50 border border-red-200 rounded-2xl p-8">
+        <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+        <p className="text-red-700 font-medium">{apiError}</p>
+      </div>
+    </div>
+  );
+
+  const project: ProjectInfo = projectInfo ?? {
+    name: 'Sin proyectos registrados',
+    period: '—',
+    area: '—',
+    deadline: '—',
+    maxStudents: 0,
+  };
 
   return (
     <div className="h-full overflow-y-auto">
@@ -323,7 +434,7 @@ export function ProyectoIntegrador() {
                     <BookOpen className="w-3.5 h-3.5" />{project.area}
                   </span>
                   <span className="flex items-center gap-1.5 text-gray-500" style={{ fontSize: '12px' }}>
-                    <GraduationCap className="w-3.5 h-3.5" />Director: {project.director}
+                    <GraduationCap className="w-3.5 h-3.5" />Director: {docente?.nombre_completo ?? 'Docente'}
                   </span>
                   <span className="flex items-center gap-1.5 text-gray-500" style={{ fontSize: '12px' }}>
                     <CalendarDays className="w-3.5 h-3.5" />Fecha límite: {project.deadline}
@@ -331,6 +442,7 @@ export function ProyectoIntegrador() {
                 </div>
               </div>
             </div>
+            {/* Botón temporalmente oculto porque requiere backend para crear alumno real
             <button
               onClick={() => setShowModal(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] text-white rounded-xl hover:bg-[#2d5280] transition-colors shrink-0"
@@ -338,6 +450,7 @@ export function ProyectoIntegrador() {
             >
               <Plus className="w-4 h-4" /> Registrar Alumno
             </button>
+            */}
           </div>
 
           {/* Stats strip */}
@@ -560,6 +673,12 @@ export function ProyectoIntegrador() {
                   Corrige las calificaciones inválidas
                 </span>
               )}
+              {saveError && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-full" style={{ fontSize: '12px', fontWeight: 500 }}>
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {saveError}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -568,7 +687,7 @@ export function ProyectoIntegrador() {
               </p>
               <button
                 onClick={saveAll}
-                disabled={!allValidCheck || pendingCount === 0}
+                disabled={!allValidCheck || pendingCount === 0 || saving}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                   saveFlash
                     ? 'bg-emerald-600 text-white'
@@ -576,7 +695,9 @@ export function ProyectoIntegrador() {
                 }`}
                 style={{ fontSize: '13px', fontWeight: 600 }}
               >
-                {saveFlash
+                {saving
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando…</>
+                  : saveFlash
                   ? <><Check className="w-4 h-4" /> ¡Calificaciones guardadas!</>
                   : <><Save className="w-4 h-4" /> Guardar Calificaciones</>
                 }
