@@ -8,7 +8,7 @@ import { TeacherProfile } from './components/TeacherProfile';
 import { GruposColegiados } from './components/GruposColegiados';
 import { CuerpoAcademico } from './components/CuerpoAcademico';
 import { Tutorias } from './components/Tutorias';
-import { ProyectoIntegrador } from './components/ProyectoIntegrador';
+import { StudentProjects } from './components/StudentProjects';
 import { SolicitudConstancias } from './components/SolicitudConstancias';
 
 function Placeholder({ title }: { title: string }) {
@@ -40,7 +40,7 @@ function Dashboard() {
       case 'colegiados':    return <GruposColegiados />;
       case 'cuerpo':        return <CuerpoAcademico />;
       case 'tutorias':      return <Tutorias />;
-      case 'proyectos':     return <ProyectoIntegrador />;
+      case 'proyectos':     return <StudentProjects />;
       case 'expediente':    return <SolicitudConstancias />;
       case 'configuracion': return <Placeholder title="Configuración" />;
       default:              return <Placeholder title="Perfil del Profesor" />;

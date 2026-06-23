@@ -592,7 +592,7 @@ function CertificatesTable({ certs, onRemove }: { certs: HistoricalCert[]; onRem
               </tr>
             ) : (
               visible.map((cert, idx) => {
-                const cfg = categoryConfig[cert.category];
+                const cfg = categoryConfig[cert.category] || { color: 'text-gray-700', bg: 'bg-gray-100' };
                 return (
                   <tr
                     key={cert.id}

@@ -58,7 +58,22 @@ CREATE TABLE docentes (
     adscripcion VARCHAR(150),
     grado_academico VARCHAR(50),
     es_ptc BOOLEAN DEFAULT FALSE,
+    telefono VARCHAR(20) NULL,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+CREATE TABLE documentos_historicos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    docente_id INT NOT NULL,
+    nombre VARCHAR(255) NOT NULL,
+    institucion VARCHAR(255) NOT NULL,
+    categoria VARCHAR(100) NOT NULL,
+    anio INT NOT NULL,
+    horas INT NULL,
+    estatus VARCHAR(100) NOT NULL,
+    archivo_url VARCHAR(500) NULL,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (docente_id) REFERENCES docentes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE supervisores (
